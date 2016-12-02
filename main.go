@@ -53,8 +53,11 @@ func main() {
 	connect := app.Command("connect", "Connects to the specified IP")
 	host := connect.Arg("ip", "Private IP of the host to connect").String()
 	connect.Action(func(ctx *kingpin.ParseContext) error {
-		logrus.Infoln(host)
-		return nil
+		item := &senzaItem{
+			stack: "",
+			ip:    *host,
+		}
+		return item.connect(accountName)
 	})
 
 	list := app.Command("list", "List down all running instances on current profile")
@@ -155,4 +158,14 @@ func extractIP(row []string) (string, string) {
 		}
 	}
 	return "", ""
+}
+
+func (item *senzaItem) connect(accountName string) error {
+	logrus.Infof("Connecting to %s at %s", item.stack, item.ip)
+	piu := exec.Command("piu", item.ip, "debug", "-O", fmt.Sprintf("odd-eu-central-1.%s.zalan.do", accountName))
+	var buf, bufError bytes.Buffer
+	piu.Stdout = &buf
+	piu.Stderr = &bufError
+	fmt.Println(buf.String(), bufError.String())
+	return piu.Run()
 }
